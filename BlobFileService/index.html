@@ -1,0 +1,143 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>
+    <h1>BlobFileService Test page.</h1>
+    <fieldset style="width:500px;">
+        <legend>How to test BlobFileService's functions.</legend>
+        <ol>
+            <li>Rewrite action attribute of form tag in this html.
+            <br>
+                Please see inline comment  in this html source about how to set for url and query strings.
+                <br />&nbsp;
+            </li>
+            <li>Display this html page with web browser.<br />&nbsp;</li>
+            <li>
+                Choose local files using the following file controls.  
+                <br />&nbsp;
+            </li>
+            <li>
+                Click [Post] (use input type="submit") button or [Upload] (use JavaScript) button.
+            </li>
+        </ol>
+        Result<br>
+        ======
+        <ul>
+        <li>
+        [Post] button.
+            <br />
+            Return url list of uploaded files on Azure blob. <br />
+            &nbsp;
+        </li>
+        <li>
+        [Upload] button.
+            <br />
+            Display download link of the file uploaded to Azure Blob on this page.
+            <br />
+            If in case of file is image then dislpay thumbnail image link.
+            </li>
+        </ul>
+    </fieldset>
+
+
+        <!-- In case of save thumbnail images file  at same time as image files upload to Azure Blob.
+           Container name : img
+           Thumbnail container name : thumbs
+           Thumbnail image size
+                Height : 200px
+                width : 200px
+      
+        -->
+
+    <form id="filesForm" action="api/img/images?thumb=thumbs&w=200&h=200" method="post" enctype="multipart/form-data">
+
+        <!--In case of simple upload files to Azure Blob.
+
+
+          <form id="filesForm" action="api/blob/files" method="post" enctype="multipart/form-data">
+        -->
+        <input type="file" name="postedFile1" required />
+        <br>
+        <input type="file" name="postedFile2" />
+        <br>
+        <input type="file" name="postedFile3" />
+        <p>
+            <div style="float:left">
+                <fieldset style="width:150px;">
+                    <legend>Use submit button</legend>
+                    <input type="submit" value="Post" />
+                </fieldset>
+            </div>
+            <div style="float:left">
+                <fieldset style="width:200px;">
+                    <legend>Use JavaScript.</legend>
+                    <input id="ulButton" type="button" value="Upload." />
+                    <br />
+                    <label>Format of linked image</label>
+                    <select>
+                        <option value="jpg">jpg</option>
+                        <option value="gif">gif</option>
+                        <option value="png">png</option>
+                        <option value="bmp">bmp</option>
+                        <option value="tiff">tiff</option>
+                        <option value="icon">bmp</option>
+                    </select>
+                </fieldset>
+            </div>
+            <div style="clear:both"></div>
+        </p>
+    </form>
+        <br />
+        <div id="placeholder"></div>
+    <script>
+        //File upload job. (ES5)
+        var $id = function (id) { return document.getElementById(id); }
+        var uploadButton = $id('ulButton');
+        var placeholder = $id('placeholder');
+        uploadButton.addEventListener('click', function () {
+            var formData = new FormData($id('filesForm'));
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    createList(xhr.responseText);
+                }
+            };
+            xhr.open("POST", "api/img/images?thumb=thumbs&w=200&h=200", true);
+            xhr.send(formData);
+        });
+
+        function createList(jsonString) {
+            var blobInfos = JSON.parse(jsonString);
+            var length = blobInfos.length;
+            if (length <= 0) { return; }
+            var isImage = (blobInfos[0].thumbnailUrl !== undefined);
+            for (var i = 0; i < length; i++) {
+                placeholder.appendChild(createLink(isImage,blobInfos[i]));
+                placeholder.appendChild(document.createElement('br'));
+            }
+        }
+
+        function createLink(isImage,blobInfo) {
+            var anchor = document.createElement('a');
+            anchor.href = blobInfo.url;
+            anchor.target = '_blank';
+            if (isImage) {
+                var img = document.createElement('img');
+                img.src = blobInfo.thumbnailUrl;
+                img.title = blobInfo.name;
+                anchor.appendChild(img);
+            } else {
+                anchor.innerText = blobInfo.name;
+            }
+            return anchor;
+        }
+
+        
+       
+    </script>
+</body>
+
+</html>
